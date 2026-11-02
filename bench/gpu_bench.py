@@ -1,9 +1,7 @@
-"""GPU benchmark: GEMM throughput and copy bandwidth, written as a JSON summary.
+"""GEMM throughput and copy bandwidth on the GPU, saved as JSON.
 
-Run the same script on bare metal and inside the passthrough guest, then compare
-the two JSON files with bench/plot.py. Needs ROCm PyTorch (torch.cuda maps to HIP).
-
-    python3 bench/gpu_bench.py --label baremetal --out bench/results/baremetal.json
+Same script on bare metal and in the guest, bench/plot.py compares the two.
+Needs ROCm PyTorch (torch.cuda is HIP underneath).
 """
 
 from __future__ import annotations
@@ -21,20 +19,20 @@ try:
 except ImportError:
     sys.exit("torch not installed (install ROCm PyTorch)")
 
-RUNS = 3  # each metric is measured RUNS times; the median is reported
+RUNS = 3  # report the median
 
 
 def pick_device() -> torch.device:
     if not torch.cuda.is_available():
         sys.exit("no GPU visible to torch")
     names = [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
-    # On the host the RX 480 may also be visible; prefer the Instinct card.
+    # the RX 480 can show up on the host too
     idx = next((i for i, n in enumerate(names) if "MI" in n), 0)
     return torch.device(f"cuda:{idx}")
 
 
 def timed(fn, iters: int, warmup: int = 3) -> float:
-    """Seconds per call, averaged over iters, after warmup."""
+    """seconds per call"""
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
@@ -60,7 +58,7 @@ def copy_gbs(dev, kind: str, size_mib: int = 1024, iters: int = 20) -> float:
     d1 = torch.empty(n, dtype=torch.uint8, device=dev)
     if kind == "d2d":
         d2 = torch.empty_like(d1)
-        # a device-to-device copy reads n bytes and writes n bytes
+        # reads n and writes n
         return 2 * n / timed(lambda: d2.copy_(d1), iters) / 1e9
     host = torch.empty(n, dtype=torch.uint8, pin_memory=True)
     if kind == "h2d":

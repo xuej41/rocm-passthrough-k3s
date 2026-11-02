@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-# Run the same benchmark on bare metal and in the guest.
-# Usage: bench/run.sh baremetal|guest
-#
-# Writes bench/results/<label>.json (committed) and a raw log in
-# bench/results/raw/ (gitignored). Once both JSON files exist, run
-# `python3 bench/plot.py` to build the comparison table and charts.
+# bench/run.sh baremetal|guest
+# writes results/<label>.json, full output goes to results/raw/ (not committed)
 set -euo pipefail
 
 WHERE="${1:-}"
@@ -26,9 +22,3 @@ mkdir -p "$RAW"
   echo "## gpu_bench.py"
   python3 "$HERE/gpu_bench.py" --label "$WHERE" --out "$HERE/results/$WHERE.json"
 } 2>&1 | tee "$LOG"
-
-echo
-echo "Raw log: $LOG"
-if [ -f "$HERE/results/baremetal.json" ] && [ -f "$HERE/results/guest.json" ]; then
-  echo "Both runs present. Next: python3 bench/plot.py"
-fi

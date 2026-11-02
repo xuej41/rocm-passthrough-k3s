@@ -1,27 +1,19 @@
-# GPU monitoring without Kubernetes: exporter + Prometheus + Grafana.
-# Run on the machine where the GPU is visible (the host before passthrough,
-# the guest after):
-#
-#   docker compose -f monitoring/docker/compose.yaml up -d
-#
-# Grafana:    http://<this-machine>:3000  (admin / admin, then pick a new password)
-# Prometheus: http://localhost:9090       (local only; use `ssh -L 9090:localhost:9090`)
+# docker compose -f monitoring/docker/compose.yaml up -d
+# run it wherever the GPU is visible (host before passthrough, guest after)
 name: gpu-monitoring
 
 services:
   exporter:
     image: rocm/device-metrics-exporter:v1.5.3
-    # Metrics get a `hostname` label from this. Without it, it's the random
-    # container ID. Use a different name on the host and in the guest.
-    hostname: gpu-node
-    privileged: true # per AMD's install docs
+    hostname: gpu-node # metrics get labelled with this, otherwise it's the container id
+    privileged: true
     devices:
       - /dev/dri
       - /dev/kfd
     volumes:
       - /sys:/sys:ro
     ports:
-      - "127.0.0.1:5000:5000" # for `curl localhost:5000/metrics`; Prometheus uses the compose network
+      - "127.0.0.1:5000:5000"
     restart: unless-stopped
 
   prometheus:

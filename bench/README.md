@@ -1,26 +1,15 @@
-# Benchmark: bare metal vs passthrough guest
+# bench
 
-The same script runs on both sides. It measures GEMM throughput (FP32, FP16) and copy bandwidth (host↔device, and device memory), reporting the median of 3 runs.
+Same script on bare metal and in the guest: FP32/FP16 GEMM, pinned host↔device copies and device memory copy, median of 3
 
 ```bash
-# 1. On the host, with the MI210 on amdgpu (before starting the VM)
-bench/run.sh baremetal          # -> bench/results/baremetal.json
-
-# 2. Inside the guest, with ROCm + ROCm PyTorch installed
-bench/run.sh guest              # -> bench/results/guest.json
-# copy guest.json back into bench/results/ on the host (or commit it from the guest)
-
-# 3. Anywhere (standard library only)
-python3 bench/plot.py           # -> comparison.md + comparison-{light,dark}.svg
+bench/run.sh baremetal    # on the host, before the VM takes the card
+bench/run.sh guest        # in the guest
+python3 bench/plot.py     # once both json files are in results/
 ```
 
-`comparison.md` has the raw numbers, a table of environments (kernel, HIP, PyTorch versions) and the chart. On GitHub, the chart follows the viewer's light or dark theme. To show it on the main README:
+- Needs ROCm PyTorch. Use the same torch version on both sides.
 
-```html
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="bench/results/comparison-dark.svg">
-  <img alt="Guest results as % of bare metal" src="bench/results/comparison-light.svg">
-</picture>
-```
+- On my host the HSA runtime bundled with the torch wheel won't start (see [LOG.md](../LOG.md)), so I run it with `LD_PRELOAD=/opt/rocm/core-10.1/lib/libhsa-runtime64.so.1`
 
-Tips: keep the GPU otherwise idle, use the same ROCm and PyTorch versions on both sides, and run each side twice to make sure the numbers are stable. To watch the GPU while it runs, see [`monitoring/`](../monitoring/README.md).
+- The MI210 slot is x8 while the RX 480 is in, so host↔device tops out around 14 GB/s

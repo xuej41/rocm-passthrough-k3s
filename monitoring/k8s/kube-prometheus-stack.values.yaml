@@ -1,12 +1,9 @@
-# kube-prometheus-stack values for a single-node k3s cluster.
-# Installed by monitoring/k8s/install.sh.
-
 alertmanager:
-  enabled: false # no alert routing needed here
+  enabled: false
 
 grafana:
   admin:
-    existingSecret: grafana-admin # created by install.sh with a random password
+    existingSecret: grafana-admin # made by install.sh
     userKey: admin-user
     passwordKey: admin-password
   service:
@@ -15,7 +12,7 @@ grafana:
   defaultDashboardsTimezone: browser
   sidecar:
     dashboards:
-      enabled: true # loads any ConfigMap labelled grafana_dashboard=1
+      enabled: true
       label: grafana_dashboard
       labelValue: "1"
 
@@ -25,21 +22,19 @@ prometheus:
     nodePort: 30090
   prometheusSpec:
     retention: 15d
-    # Pick up every ServiceMonitor/PodMonitor in the cluster, not only ones
-    # labelled with this Helm release (the AMD exporter's isn't).
+    # otherwise it only picks up ServiceMonitors from this release, and the AMD one isn't
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: local-path # k3s's built-in provisioner
+          storageClassName: local-path
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
               storage: 10Gi
 
-# k3s runs these inside its own binary, so the chart's default scrape targets
-# for them don't exist and would show as permanently down.
+# k3s runs these inside its own binary, the scrape targets would just show as down
 kubeControllerManager:
   enabled: false
 kubeScheduler:

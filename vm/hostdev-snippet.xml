@@ -1,19 +1,14 @@
-<!--
-  Pieces to merge into the domain XML with `virsh edit rocm-guest`.
-  Only needed if the guest logs "BAR can't assign mem" (see docs/troubleshooting.md).
--->
+<!-- only if the guest can't fit the 64 GB BAR. merge in with: virsh edit rocm-guest -->
 
-<!-- 1. Enlarge the guest's 64-bit PCI window. The MI210 has 64 GB of VRAM, so the
-        BAR needs more than 64 GiB of space. Put this on the existing pcie-root controller. -->
+<!-- bigger 64-bit PCI window, goes on the existing pcie-root controller -->
 <controller type='pci' index='0' model='pcie-root'>
   <pcihole64 unit='GiB'>128</pcihole64>
 </controller>
 
-<!-- 2. MI210 as a managed host device with ROM BAR off.
-        managed='yes' means libvirt unbinds amdgpu -> vfio-pci on start and rebinds on stop. -->
+<!-- managed='yes': libvirt swaps amdgpu for vfio-pci on start and back on stop -->
 <hostdev mode='subsystem' type='pci' managed='yes'>
   <source>
-    <address domain='0x0000' bus='0x0c' slot='0x00' function='0x0'/>  <!-- EDIT to match lspci -D -->
+    <address domain='0x0000' bus='0x0c' slot='0x00' function='0x0'/>
   </source>
   <rom bar='off'/>
 </hostdev>

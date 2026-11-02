@@ -1,7 +1,4 @@
-# A pod that requests one AMD GPU and prints rocm-smi.
-# Pre-req: AMD device plugin deployed (see k8s/README.md).
-# Import the image instead of pulling it again:
-#   docker save rocm/dev-ubuntu-22.04:latest | sudo k3s ctr images import -
+# needs the AMD device plugin running (see k8s/README.md)
 apiVersion: v1
 kind: Pod
 metadata:
@@ -10,8 +7,8 @@ spec:
   restartPolicy: Never
   containers:
     - name: rocm
-      image: rocm/dev-ubuntu-22.04:latest   # EDIT: match the tag you imported
-      imagePullPolicy: IfNotPresent         # use the imported image; don't pull
+      image: rocm/dev-ubuntu-22.04:latest
+      imagePullPolicy: IfNotPresent # imported with k3s ctr, don't pull
       command: ["sh", "-c", "rocm-smi && rocminfo | grep -m1 -i gfx"]
       resources:
         limits:

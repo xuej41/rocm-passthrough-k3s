@@ -1,0 +1,42 @@
+{
+  "label": "baremetal",
+  "timestamp": "2026-11-02T22:13:14+00:00",
+  "environment": {
+    "device": "AMD Instinct MI210",
+    "kernel": "7.0.0-42-generic",
+    "hip": "7.15.26333",
+    "torch": "2.15.0+rocm10.0"
+  },
+  "metrics": [
+    {
+      "key": "gemm_fp32",
+      "name": "GEMM FP32",
+      "unit": "TFLOPS",
+      "value": 32.402
+    },
+    {
+      "key": "gemm_fp16",
+      "name": "GEMM FP16",
+      "unit": "TFLOPS",
+      "value": 118.708
+    },
+    {
+      "key": "h2d",
+      "name": "Host \u2192 device copy",
+      "unit": "GB/s",
+      "value": 14.432
+    },
+    {
+      "key": "d2h",
+      "name": "Device \u2192 host copy",
+      "unit": "GB/s",
+      "value": 14.314
+    },
+    {
+      "key": "d2d",
+      "name": "Device memory copy",
+      "unit": "GB/s",
+      "value": 1248.659
+    }
+  ]
+}

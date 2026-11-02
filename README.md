@@ -41,72 +41,40 @@ Host OS: Ubuntu 26.04 LTS, kernel 7.0.
   <sub>The bench, and a top-down view: MI210 in the top slot, RX 480 below.</sub>
 </p>
 
+With both cards in, the board splits the CPU lanes x8/x8, so the MI210 runs at PCIe 4.0 x8.
+
 ## Status
 
-| Component | Status |
+| | |
 |---|---|
-| Host: IOMMU, KVM, libvirt, OVMF | Planned |
-| MI210 passthrough VM with ROCm, benchmarked against bare metal | Planned |
+| Host: IOMMU, KVM, libvirt, OVMF | Done |
+| MI210 passthrough VM with ROCm, benchmarked against bare metal | Bare metal done, VM next |
 | k3s pod using `amd.com/gpu: 1` | Planned |
-| `passthrough-check` tool, tests, CI | In progress |
-| GPU monitoring: AMD exporter, Prometheus, Grafana | In progress |
+| `passthrough-check` tool, tests, CI | Working |
+| GPU monitoring: AMD exporter, Prometheus, Grafana | Configs written, not tried on the card yet |
 | Docker GPU access (`/dev/kfd`, `/dev/dri`) | Done |
 | NVIDIA path (RTX 4060 Ti) | Planned |
 
-Errors and fixes: [LOG.md](LOG.md).
+Problems I hit and how I got past them: [LOG.md](LOG.md).
 
 ## Results
 
-Bare metal vs guest: see [bench/results/comparison.md](bench/results/comparison.md) (not run yet). [`bench/`](bench/README.md) runs the same GEMM and copy-bandwidth tests on both sides, and `bench/plot.py` turns the results into a table and chart.
-
-Live GPU metrics: [`monitoring/`](monitoring/README.md) sets up AMD's Device Metrics Exporter, Prometheus and a Grafana dashboard, on k3s or with Docker Compose.
-
-<!-- Screenshots: put them in docs/img/, then uncomment.
-<p align="center">
-  <img src="docs/img/rocm-smi-guest.png" alt="rocm-smi inside the guest listing the MI210" width="720">
-</p>
-<p align="center">
-  <img src="docs/img/k8s-pod-logs.png" alt="kubectl logs of the rocm-smi pod showing the MI210" width="720">
-</p>
-<p align="center">
-  <img src="docs/img/grafana-mi210.png" alt="Grafana MI210 dashboard during a benchmark run" width="720">
-</p>
--->
+[`bench/`](bench/) runs the same GEMM and copy tests on bare metal and in the guest, and `bench/plot.py` turns the two runs into [bench/results/comparison.md](bench/results/comparison.md).
 
 ## passthrough-check
 
-Reads sysfs and reports, for each GPU:
-
-- the bound **driver** (`amdgpu`, `vfio-pci`, …)
-- its **IOMMU group** and the other devices in it (bridges and sibling functions are allowed)
-- **PCIe link speed and width** compared with the maximum
-- the **reset method**, which tells you whether the card can recover after the VM stops
+Reads sysfs and, for each GPU, reports the bound driver, the IOMMU group and what else is in it, PCIe link speed and width against the max, and the reset method (whether the card can recover after the VM stops).
 
 ```bash
 pip install -e '.[dev]'
-passthrough-check                                  # auto-detect AMD/NVIDIA GPUs
+passthrough-check                                  # every AMD/NVIDIA GPU
 passthrough-check 0c:00.0 --expect-driver vfio-pci # while the VM runs
-passthrough-check 0c:00.0 --expect-driver amdgpu   # after the VM stops
+passthrough-check 0c:00.0 --expect-driver amdgpu   # after it stops
 passthrough-check --json
 ```
 
-Exit codes: `0` ready, `1` problems found, `2` device not found or bad input.
+Exits 0 if ready, 1 if it found a problem, 2 if the device doesn't exist. The tests build a fake sysfs tree, so `pytest` runs anywhere, CI included.
 
-Development: `pytest`, then `ruff check . && ruff format --check .`. The tests build a fake sysfs tree, so they run anywhere, including CI.
+## License
 
-## Repo layout
-
-| Path | Purpose |
-|---|---|
-| `host/` | Host checks, IOMMU group listing, vfio-pci fallback config |
-| `vm/` | VM creation and libvirt XML snippets |
-| `k8s/` | GPU pod manifests (AMD, and optional NVIDIA) |
-| `bench/` | Benchmark, results, and chart generator |
-| `monitoring/` | Prometheus + Grafana + AMD exporter (k3s or Docker Compose), MI210 dashboard |
-| `src/`, `tests/` | `passthrough-check` and its tests |
-| `docs/` | Troubleshooting, AMD vs NVIDIA comparison, roadmap |
-
-## Scope
-
-- Passthrough, the k3s GPU pod, Docker GPU access, GPU monitoring.
-- Future: see [docs/roadmap.md](docs/roadmap.md) (KubeVirt, SR-IOV/GIM, vLLM, packaging).
+MIT

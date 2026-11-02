@@ -1,15 +1,14 @@
-"""Read PCI passthrough-relevant facts from sysfs.
+"""Reads the passthrough-relevant bits of sysfs.
 
-Everything takes a ``sysfs_root`` so tests can point it at a fake tree.
+Everything takes a sysfs_root so the tests can point it at a fake tree.
 
-Paths used (relative to the sysfs root, normally ``/sys``):
-
-- ``bus/pci/devices/<addr>/{vendor,device,class}``
-- ``bus/pci/devices/<addr>/driver``          -> symlink to the bound driver
-- ``bus/pci/devices/<addr>/iommu_group``     -> symlink to ``kernel/iommu_groups/<n>``
-- ``kernel/iommu_groups/<n>/devices/*``      -> every device in the group
-- ``bus/pci/devices/<addr>/{current,max}_link_{speed,width}``
-- ``bus/pci/devices/<addr>/reset_method``    (kernel >= 5.15)
+    bus/pci/devices/<addr>/
+        vendor, device, class
+        driver          -> symlink to the bound driver
+        iommu_group     -> symlink to kernel/iommu_groups/<n>
+        {current,max}_link_{speed,width}
+        reset_method    (kernel 5.15+)
+    kernel/iommu_groups/<n>/devices/*
 """
 
 from __future__ import annotations
@@ -22,9 +21,9 @@ AMD_VENDOR = "0x1002"
 NVIDIA_VENDOR = "0x10de"
 GPU_VENDORS = (AMD_VENDOR, NVIDIA_VENDOR)
 
-# PCI class codes (first byte of the 24-bit class): 0x03 display, 0x12 processing accelerator.
+# class 0x03 = display, 0x12 = processing accelerator
 GPU_CLASS_PREFIXES = ("0x03", "0x12")
-# 0x0604 = PCI-to-PCI bridge. Bridges in a group are fine; vfio doesn't need them.
+# 0x0604 = pci bridge, fine to have in the group
 BRIDGE_CLASS_PREFIX = "0x0604"
 
 _ADDR_FULL = re.compile(r"^[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7]$")
@@ -50,7 +49,7 @@ class PciDevice:
 
     @property
     def slot(self) -> str:
-        """Address without the function number, e.g. ``0000:03:00``."""
+        """address without the function, e.g. 0000:03:00"""
         return self.address.rsplit(".", 1)[0]
 
 
@@ -69,7 +68,7 @@ class Report:
     max_link_speed: str | None
     current_link_width: str | None
     max_link_width: str | None
-    reset_methods: list[str] | None  # None = attribute missing (old kernel)
+    reset_methods: list[str] | None  # None if the kernel doesn't have reset_method
     findings: list[Finding] = field(default_factory=list)
 
     @property
@@ -83,7 +82,7 @@ class Report:
 
 
 def normalize_address(addr: str) -> str:
-    """Accept ``03:00.0`` or ``0000:03:00.0``; return the full lowercase form."""
+    """03:00.0 or 0000:03:00.0 -> 0000:03:00.0"""
     a = addr.strip().lower()
     if _ADDR_SHORT.match(a):
         a = "0000:" + a
@@ -100,7 +99,7 @@ def _read(path: Path) -> str | None:
 
 
 def _link_name(path: Path) -> str | None:
-    """Basename of a symlink's target, or None if the link doesn't exist."""
+    """name of what a symlink points to"""
     if not path.is_symlink():
         return None
     return Path(path.readlink()).name
@@ -125,7 +124,7 @@ def read_device(address: str, sysfs_root: Path = Path("/sys")) -> PciDevice:
 
 
 def find_gpus(sysfs_root: Path = Path("/sys"), vendors=GPU_VENDORS) -> list[str]:
-    """Addresses of display/accelerator devices from the given vendors."""
+    """addresses of AMD/NVIDIA display and accelerator devices"""
     root = _devices_dir(sysfs_root)
     if not root.is_dir():
         return []
@@ -139,7 +138,7 @@ def find_gpus(sysfs_root: Path = Path("/sys"), vendors=GPU_VENDORS) -> list[str]
 
 
 def parse_speed(value: str | None) -> float | None:
-    """``'16.0 GT/s PCIe'`` -> ``16.0``. Returns None for 'Unknown' or missing."""
+    """'16.0 GT/s PCIe' -> 16.0, None for Unknown"""
     if not value:
         return None
     m = _SPEED.search(value)
@@ -211,7 +210,7 @@ def evaluate(r: Report, expect_driver: str | None = None) -> list[Finding]:
     else:
         for m in r.group_members:
             if m.is_bridge or m.slot == r.device.slot:
-                continue  # bridges and sibling functions are passed through together
+                continue  # bridges and other functions of the same card are fine
             out.append(
                 Finding(
                     "error",

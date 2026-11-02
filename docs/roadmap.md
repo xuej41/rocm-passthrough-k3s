@@ -1,14 +1,12 @@
-# Roadmap
+# Later
 
-Each item should become a GitHub issue (label `roadmap`).
+- KubeVirt VM with the MI210
+- SR-IOV with AMD's GIM driver. It's only validated on RHEL 9.4 hosts, so a consumer board might not cooperate
+- vLLM on the MI210
+- .deb / .rpm for passthrough-check
 
-## Planned
-- [ ] Prometheus and Grafana with AMD's metrics exporter: configs in `monitoring/`, not yet tested on the MI210
-- [ ] KubeVirt VM with the MI210 passed through
-- [ ] SR-IOV with AMD's GIM driver. It's validated on RHEL 9.4 hosts, and a consumer board may not cooperate.
-- [ ] vLLM serving on the MI210
-- [ ] Package `passthrough-check` as .deb and .rpm
+passthrough-check:
 
-## Tool ideas
-- [ ] `--watch` mode to catch link speed under load
-- [ ] Flag `pcihole64` / BAR size problems (read `resource` and compare against guest-visible space)
+- check the slot link too, not just the GPU's. The MI210 has its own PCIe switch, so the GPU always reports x16 even though the slot is x8
+- `--watch` to catch the link dropping under load
+- flag BAR / pcihole64 problems

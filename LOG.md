@@ -1,12 +1,29 @@
-# Error log
+# Log
 
-Every error, including dead ends. Newest first. One entry per problem.
+Things that broke and what fixed them
 
-<!--
-## YYYY-MM-DD · Short title
-- **Area:** host / vm / k8s / tool / monitoring
-- **Symptom:** exact error text / what you saw
-- **Cause:** what was actually wrong (or "unknown, ruled out X, Y")
-- **Fix:** what made it work, with the command or config change
-- **Ruled out:** things you tried that weren't it
--->
+## Host↔Device copies only ~14 GB/s
+
+Bare-metal bench gave 14.4 GB/s each way with pinned memory. PCIe 4.0 x16 should be closer to 25
+
+`passthrough-check` said x16 at the GPU, but that's the link inside the card (the MI210 has its own PCIe switch). One level up, the slot is x8:
+
+```
+00:03.1 root port       16 GT/s x8  (max x8)
+0a:00.0 MI210 upstream  16 GT/s x8  (max x16)
+0c:00.0 MI210           16 GT/s x16 (max x16)
+```
+
+The board splits the CPU's 16 lanes x8/x8 when both top slots are used, and the RX 480 is in the second one. So 14 GB/s is about right for 4.0 x8. Left it as is for now, since it doesn't change the bare metal vs guest comparison. Moving the RX 480 to the chipset slot should give the MI210 the full x16.
+
+## Torch can't see the GPU on the host
+
+`bench/run.sh baremetal` → `no GPU visible to torch`. The wheel is `2.15.0+rocm10.0`, so it's not a CPU build. `AMD_LOG_LEVEL=3` shows `hsa_init failed with 1000`. The `rocminfo` bundled with the wheel fails too (`HSA_STATUS_ERROR`), and `HSAKMT_DEBUG_LEVEL=7` gives `Failed to map remapped mmio page on gpu_mem 1`.
+
+The system ROCm (10.1, `/opt/rocm/core-10.1`) works fine, so I loaded its HSA runtime instead of the bundled one:
+
+```
+LD_PRELOAD=/opt/rocm/core-10.1/lib/libhsa-runtime64.so.1 bench/run.sh baremetal
+```
+
+With 10.1 it prints `Skipping unsupported GPU: Polaris10 (node 2) ... unsupported doorbell type 1` and carries on with the MI210. So the RX 480 is probably what kills the 10.0 runtime; I didn't confirm by pulling the card.

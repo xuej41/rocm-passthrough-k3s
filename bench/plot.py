@@ -1,15 +1,6 @@
-"""Compare bare-metal and guest benchmark results.
+"""baremetal.json + guest.json -> comparison.md and a bar chart (guest as % of bare metal).
 
-Reads baremetal.json and guest.json (written by gpu_bench.py) and writes:
-
-- comparison.md         a table of raw numbers, with the chart embedded
-- comparison-light.svg  chart for light backgrounds
-- comparison-dark.svg   chart for dark backgrounds (GitHub picks the right one)
-
-The chart shows each guest result as a percentage of bare metal: 100% means
-passthrough costs nothing. Standard library only.
-
-    python3 bench/plot.py [--results-dir bench/results]
+Two copies of the svg so it looks right in GitHub's light and dark mode.
 """
 
 from __future__ import annotations
@@ -21,7 +12,6 @@ import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-# Reference palette (validated): slot-1 blue plus chart chrome, per theme.
 THEMES = {
     "light": {
         "surface": "#fcfcfb",
@@ -44,8 +34,8 @@ THEMES = {
 }
 
 WIDTH = 720
-LABEL_W = 230  # left column: metric name + raw values
-RIGHT_PAD = 70  # room for the value label past the bar tip
+LABEL_W = 230  # metric name + raw numbers
+RIGHT_PAD = 70  # room for the % label
 TOP = 92
 ROW_H = 46
 BAR_H = 20
@@ -58,7 +48,7 @@ def load(path: Path) -> dict:
 
 
 def pair_metrics(bare: dict, guest: dict) -> list[dict]:
-    """Metrics present in both runs, in bare-metal order, with guest/bare ratio."""
+    """metrics that are in both runs, with guest as % of bare metal"""
     g = {m["key"]: m for m in guest["metrics"]}
     rows = []
     for m in bare["metrics"]:
@@ -82,7 +72,7 @@ def fmt(v: float) -> str:
 
 
 def bar_path(x: float, y: float, w: float, h: float, r: float = 4) -> str:
-    """Bar square at the baseline (left), rounded at the data end (right)."""
+    """flat on the left, rounded on the right"""
     r = min(r, w, h / 2)
     return (
         f"M{x:.1f},{y:.1f} h{w - r:.1f} a{r},{r} 0 0 1 {r},{r} "
@@ -111,7 +101,7 @@ def render_svg(rows: list[dict], theme: str) -> str:
         "Guest result as % of bare metal. 100% means passthrough costs nothing.</text>",
     ]
 
-    # Gridlines + ticks (hairline, recessive), then the 100% reference line.
+    # gridlines, then the 100% line
     axis_y = TOP + ROW_H * len(rows)
     for p in range(0, top_pct + 1, 25 if top_pct <= 150 else 50):
         x = sx(p)
@@ -191,14 +181,14 @@ def render_markdown(rows: list[dict], bare: dict, guest: dict) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(description="Compare bare-metal and guest benchmark results.")
+    p = argparse.ArgumentParser(description="compare bare metal and guest results")
     p.add_argument("--results-dir", type=Path, default=Path(__file__).parent / "results")
     args = p.parse_args(argv)
 
     d = args.results_dir
     missing = [n for n in ("baremetal.json", "guest.json") if not (d / n).exists()]
     if missing:
-        print(f"missing in {d}: {', '.join(missing)} (run bench/run.sh first)", file=sys.stderr)
+        print(f"missing in {d}: {', '.join(missing)}", file=sys.stderr)
         return 2
 
     bare, guest = load(d / "baremetal.json"), load(d / "guest.json")
@@ -211,8 +201,7 @@ def main(argv: list[str] | None = None) -> int:
         (d / f"comparison-{theme}.svg").write_text(render_svg(rows, theme))
     (d / "comparison.md").write_text(render_markdown(rows, bare, guest))
     for r in rows:
-        print(f"{r['name']:22} {r['pct']:6.1f}% of bare metal")
-    print(f"wrote {d}/comparison.md and comparison-{{light,dark}}.svg")
+        print(f"{r['name']:22} {r['pct']:6.1f}%")
     return 0
 
 

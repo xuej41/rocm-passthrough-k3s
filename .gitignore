@@ -2,37 +2,29 @@ CLAUDE.md
 .claude/
 private/
 
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
-.eggs/
 build/
 dist/
 .venv/
 venv/
 .pytest_cache/
 .ruff_cache/
-.mypy_cache/
-.coverage
-htmlcov/
 
-# VM images and installer media (large, machine-specific)
+# vm disks / isos
 *.qcow2
 *.img
 *.iso
 *.raw
 *.fd
 
-# Container image tarballs used for `k3s ctr images import`
+# image tarballs for k3s ctr import
 *.tar
 *.tar.gz
 
-# Raw benchmark dumps (summaries go in bench/results/*.md)
 bench/results/raw/
 
-# Editors / OS
 .vscode/
 .idea/
 *.swp
-.DS_Store

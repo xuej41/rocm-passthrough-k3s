@@ -1,14 +1,22 @@
-# Passthrough VM
+# VM
 
-Order matters:
+Run `bench/run.sh baremetal` on the host first, while the card is still on amdgpu.
 
-1. **Bare-metal benchmark first.** With the MI210 on `amdgpu` on the host, run `bench/run.sh baremetal`.
-2. Create the VM: `MI210_ADDR=0000:0c:00.0 ISO=... vm/create-vm.sh`, then install Ubuntu 22.04.
-3. Check on the host while the VM is running: `passthrough-check 0c:00.0 --expect-driver vfio-pci`
-4. Install ROCm in the guest by following AMD's ROCm quick-start guide for Ubuntu 22.04 (`amdgpu-install`). Then run `rocm-smi`; it should list the MI210.
-5. Run `bench/run.sh guest` in the guest, copy `bench/results/guest.json` back, and run `python3 bench/plot.py` (see `bench/README.md`).
-6. `virsh shutdown rocm-guest`, then on the host run `passthrough-check 0c:00.0 --expect-driver amdgpu`. The card must return to amdgpu.
+The ISO has to be somewhere libvirt can read (`/var/lib/libvirt/images`, not your home folder).
 
-**Verify:** `rocm-smi` sees the MI210 in the guest.
+```bash
+MI210_ADDR=0000:0c:00.0 ISO=/var/lib/libvirt/images/ubuntu-22.04.5-live-server-amd64.iso vm/create-vm.sh
+passthrough-check 0c:00.0 --expect-driver vfio-pci    # on the host, with the VM running
+```
 
-Guest checks: `lspci -nnk | grep -A3 -i amd`, `dmesg | grep -i amdgpu`, `rocminfo | grep -i gfx` (MI210 = `gfx90a`).
+Install Ubuntu through virt-manager, then install ROCm in the guest with `amdgpu-install` (AMD's quick start for 22.04). `rocm-smi` and `rocminfo | grep gfx90a` should both show the MI210. Then run `bench/run.sh guest`, copy `guest.json` back to the host, and run `python3 bench/plot.py`.
+
+After `virsh shutdown rocm-guest` the card should go back to amdgpu:
+
+```bash
+passthrough-check 0c:00.0 --expect-driver amdgpu
+```
+
+If it doesn't, check `dmesg` for reset errors. The MI210 only has `bus` reset.
+
+`hostdev-snippet.xml` is for when the guest can't fit the 64 GB BAR (`BAR can't assign mem` in the guest's dmesg).
