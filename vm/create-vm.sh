@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # q35 + UEFI Ubuntu 22.04 guest with the MI210 as a managed hostdev
-# MI210_ADDR=0000:0c:00.0 ISO=/var/lib/libvirt/images/ubuntu-22.04.5-live-server-amd64.iso vm/create-vm.sh
+# MI210_ADDR=0000:0d:00.0 ISO=/var/lib/libvirt/images/ubuntu-22.04.5-live-server-amd64.iso vm/create-vm.sh
 set -euo pipefail
 
-: "${MI210_ADDR:?set MI210_ADDR, e.g. 0000:0c:00.0}"
+: "${MI210_ADDR:?set MI210_ADDR, e.g. 0000:0d:00.0}"
 : "${ISO:?set ISO to the ubuntu 22.04 server iso}"
 NAME="${NAME:-rocm-guest}"
 RAM_MB="${RAM_MB:-16384}"   # host only has 32 GB

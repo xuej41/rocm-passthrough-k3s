@@ -41,7 +41,7 @@ Host OS: Ubuntu 26.04 LTS, kernel 7.0.
   <sub>The bench, and a top-down view: MI210 in the top slot, RX 480 below.</sub>
 </p>
 
-With both cards in, the board splits the CPU lanes x8/x8, so the MI210 runs at PCIe 4.0 x8.
+The RX 480 sits in the bottom slot, which runs off the chipset, so the MI210 gets the full PCIe 4.0 x16 from the CPU.
 
 ## Status
 
@@ -68,8 +68,8 @@ Reads sysfs and, for each GPU, reports the bound driver, the IOMMU group and wha
 ```bash
 pip install -e '.[dev]'
 passthrough-check                                  # every AMD/NVIDIA GPU
-passthrough-check 0c:00.0 --expect-driver vfio-pci # while the VM runs
-passthrough-check 0c:00.0 --expect-driver amdgpu   # after it stops
+passthrough-check 0d:00.0 --expect-driver vfio-pci # while the VM runs
+passthrough-check 0d:00.0 --expect-driver amdgpu   # after it stops
 passthrough-check --json
 ```
 

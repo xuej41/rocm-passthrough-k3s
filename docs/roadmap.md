@@ -7,6 +7,6 @@
 
 passthrough-check:
 
-- check the slot link too, not just the GPU's. The MI210 has its own PCIe switch, so the GPU always reports x16 even though the slot is x8
+- check the slot link too, not just the GPU's. The MI210 has its own PCIe switch, so the GPU always reports x16 even when the slot is only x8
 - `--watch` to catch the link dropping under load
 - flag BAR / pcihole64 problems

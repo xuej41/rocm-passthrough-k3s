@@ -14,7 +14,9 @@ Bare-metal bench gave 14.4 GB/s each way with pinned memory. PCIe 4.0 x16 should
 0c:00.0 MI210           16 GT/s x16 (max x16)
 ```
 
-The board splits the CPU's 16 lanes x8/x8 when both top slots are used, and the RX 480 is in the second one. So 14 GB/s is about right for 4.0 x8. Left it as is for now, since it doesn't change the bare metal vs guest comparison. Moving the RX 480 to the chipset slot should give the MI210 the full x16.
+The board splits the CPU's 16 lanes x8/x8 when both top slots are used, and the RX 480 is in the second one. So 14 GB/s is about right for 4.0 x8. Moved the RX 480 to the bottom slot. That one runs off the chipset (x4 electrically, fine for a display card), and the MI210 is x16 all the way now. Moving it renumbered the buses: the MI210 went from 0c:00.0 to 0d:00.0 and from IOMMU group 28 to 29, so everything that hardcoded the address had to change. 0c:00.0 is now one of the card's own switch ports, so passing the old address would have handed the VM a bridge.
+
+After the move: host→device 28.3 GB/s, device→host 28.6 GB/s (was 14.4 / 14.3). GEMM and device memory copy didn't change.
 
 ## Torch can't see the GPU on the host
 
