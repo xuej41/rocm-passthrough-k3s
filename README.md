@@ -14,6 +14,33 @@ Host (Ubuntu, amdgpu drives the RX 480 display)
              └─ AMD metrics exporter ── Prometheus ── Grafana
 ```
 
+## Hardware
+
+| Part | Model |
+|---|---|
+| GPU (compute) | AMD Instinct MI210 64 GB HBM2e with custom cooling shroud |
+| GPU (host) | AMD Radeon RX 480 8 GB |
+| CPU | AMD Ryzen 7 5800XT 8 core 16 thread CPU |
+| Motherboard | ASUS ROG X570 Crosshair VIII Hero Wi-Fi|
+| Memory | 32 GB (4 × 8 GB) Corsair Vengeance DDR4-3200 CL16 |
+| Storage | Samsung 980 PRO |
+| Power supply | Seasonic Prime Gold 1200 W |
+| Chassis | Lian Li open-air test bench |
+
+Host OS: Ubuntu 26.04 LTS, kernel 7.0.
+
+<p align="center">
+  <img src="docs/img/GPU.jpg" alt="AMD Instinct MI210 with a custom 3D-printed shroud and two fans on the end of the card" width="720">
+  <br>
+  <sub>The MI210 is passively cooled, so a 3D-printed shroud with two fans pushes air through its heatsink.</sub>
+</p>
+<p align="center">
+  <img src="docs/img/main.jpg" alt="Open-air test bench with the MI210 and RX 480 installed" width="355">
+  <img src="docs/img/topdown.jpg" alt="Top-down view: MI210 in the top PCIe slot, RX 480 below it" width="355">
+  <br>
+  <sub>The bench, and a top-down view: MI210 in the top slot, RX 480 below.</sub>
+</p>
+
 ## Status
 
 | Component | Status |
@@ -33,6 +60,18 @@ Errors and fixes: [LOG.md](LOG.md).
 Bare metal vs guest: see [bench/results/comparison.md](bench/results/comparison.md) (not run yet). [`bench/`](bench/README.md) runs the same GEMM and copy-bandwidth tests on both sides, and `bench/plot.py` turns the results into a table and chart.
 
 Live GPU metrics: [`monitoring/`](monitoring/README.md) sets up AMD's Device Metrics Exporter, Prometheus and a Grafana dashboard, on k3s or with Docker Compose.
+
+<!-- Screenshots: put them in docs/img/, then uncomment.
+<p align="center">
+  <img src="docs/img/rocm-smi-guest.png" alt="rocm-smi inside the guest listing the MI210" width="720">
+</p>
+<p align="center">
+  <img src="docs/img/k8s-pod-logs.png" alt="kubectl logs of the rocm-smi pod showing the MI210" width="720">
+</p>
+<p align="center">
+  <img src="docs/img/grafana-mi210.png" alt="Grafana MI210 dashboard during a benchmark run" width="720">
+</p>
+-->
 
 ## passthrough-check
 
