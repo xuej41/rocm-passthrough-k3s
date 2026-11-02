@@ -1,0 +1,57 @@
+# GPU monitoring without Kubernetes: exporter + Prometheus + Grafana.
+# Run on the machine where the GPU is visible (the host before passthrough,
+# the guest after):
+#
+#   docker compose -f monitoring/docker/compose.yaml up -d
+#
+# Grafana:    http://<this-machine>:3000  (admin / admin, then pick a new password)
+# Prometheus: http://localhost:9090       (local only; use `ssh -L 9090:localhost:9090`)
+name: gpu-monitoring
+
+services:
+  exporter:
+    image: rocm/device-metrics-exporter:v1.5.3
+    # Metrics get a `hostname` label from this. Without it, it's the random
+    # container ID. Use a different name on the host and in the guest.
+    hostname: gpu-node
+    privileged: true # per AMD's install docs
+    devices:
+      - /dev/dri
+      - /dev/kfd
+    volumes:
+      - /sys:/sys:ro
+    ports:
+      - "127.0.0.1:5000:5000" # for `curl localhost:5000/metrics`; Prometheus uses the compose network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - exporter
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.2.5
+    volumes:
+      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/prometheus.yaml:ro
+      - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/gpu.yaml:ro
+      - ../dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:

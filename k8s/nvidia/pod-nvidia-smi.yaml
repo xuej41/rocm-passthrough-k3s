@@ -1,0 +1,17 @@
+# Optional NVIDIA path with the RTX 4060 Ti.
+# Pre-reqs: NVIDIA driver + Container Toolkit installed, k3s restarted (k3s then
+# creates the `nvidia` RuntimeClass itself), and NVIDIA's device plugin deployed.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-smi
+spec:
+  restartPolicy: Never
+  runtimeClassName: nvidia
+  containers:
+    - name: cuda
+      image: nvidia/cuda:12.4.1-base-ubuntu22.04   # EDIT: any CUDA base image
+      command: ["nvidia-smi"]
+      resources:
+        limits:
+          nvidia.com/gpu: 1

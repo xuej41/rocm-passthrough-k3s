@@ -1,0 +1,20 @@
+# Requests 2 GPUs on a node that has 1. This SHOULD stay Pending.
+#   kubectl describe pod rocm-smi-2gpu   -> "Insufficient amd.com/gpu"
+# Why: the scheduler only places a pod on a node whose allocatable amd.com/gpu
+# (advertised by the device plugin) is >= the request. GPUs are whole, not
+# overcommitted, and not split across nodes, so no node fits.
+# If this pod RUNS, the plugin is counting the RX 480 as a second GPU.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rocm-smi-2gpu
+spec:
+  restartPolicy: Never
+  containers:
+    - name: rocm
+      image: rocm/dev-ubuntu-22.04:latest
+      imagePullPolicy: IfNotPresent
+      command: ["rocm-smi"]
+      resources:
+        limits:
+          amd.com/gpu: 2
