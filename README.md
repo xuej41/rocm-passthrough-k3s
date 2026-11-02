@@ -59,11 +59,11 @@ Problems I hit and how I got past them: [LOG.md](LOG.md).
 
 ## Results
 
-[`bench/`](bench/) runs the same GEMM and copy tests on bare metal and in the guest, and `bench/plot.py` turns the two runs into [bench/results/comparison.md](bench/results/comparison.md).
+[`bench/`](bench/) runs the same GEMM and copy tests on bare metal and in the guest, and `bench/plot.py` turns the two runs into [bench/results/comparison.md](bench/results/comparison.md)
 
 ## passthrough-check
 
-Reads sysfs and, for each GPU, reports the bound driver, the IOMMU group and what else is in it, PCIe link speed and width against the max, and the reset method (whether the card can recover after the VM stops).
+Reads sysfs and, for each GPU, reports the bound driver, the IOMMU group and what else is in it, PCIe link speed and width against the max, and the reset method (whether the card can recover after the VM stops)
 
 ```bash
 pip install -e '.[dev]'
@@ -74,7 +74,3 @@ passthrough-check --json
 ```
 
 Exits 0 if ready, 1 if it found a problem, 2 if the device doesn't exist. The tests build a fake sysfs tree, so `pytest` runs anywhere, CI included.
-
-## License
-
-MIT
